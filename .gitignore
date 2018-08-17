@@ -1,0 +1,5 @@
+feats
+__pycache__/
+*.pyc
+HowmanyQA*/
+Ourdb*/
