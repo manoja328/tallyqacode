@@ -29,6 +29,7 @@ def parsejson(jsonpath):
     return js
 
 def filetostr(filepath):    
+    "return str of file to read"
     if not os.path.exists(filepath):
         print ("JSON path not found!!")
         return
