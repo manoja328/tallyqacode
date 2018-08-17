@@ -107,6 +107,14 @@ def accuracy(true,pred):
     return 100.0* np.sum(true == pred)/float(N)
 
 
+# maintain all metrics required in this dictionary- these are used
+#in the training and evaluation loops
+metrics = {
+    'accuracy': accuracy,
+    'rmse': RMSE,
+    # could add more metrics such as accuracy for each token type
+}
+
 
 def save_checkpoint(savefolder,tbs, is_best=False):
     epoch = tbs['epoch']
@@ -132,7 +140,6 @@ def load_checkpoint(filename,model,optimizer):
                .format(filename, checkpoint['epoch']))
      else:
          print("=> no checkpoint found at '{}'".format(filename))
-
 
 
 class AverageMeter:

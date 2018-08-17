@@ -9,16 +9,6 @@ import utils
 import numpy as np
 import eval_extra
 #%%
-
-
-# maintain all metrics required in this dictionary- these are used in the training and evaluation loops
-metrics = {
-    'accuracy': utils.accuracy,
-    'rmse': utils.RMSE,
-    # could add more metrics such as accuracy for each token type
-}
-
-
 def main(**kwargs):
     
     device = kwargs.get('device') 
@@ -183,9 +173,7 @@ def run(**kwargs):
         pred_reg = np.array(test['pred_reg'],dtype=np.uint64)
         pred_reg_clip = pred_reg.clip(min=0,max=N_classes-1).tolist()
         predictions = dict(zip(test['qids'] , pred_reg_clip))
-        
-        #convert to string for vqa eval
-        
+           
         if isVQAeval:
             acc,rmse = eval_extra.evalvqa(testset,predictions,isVQAeval)
             logger.write("\tRMSE:{:.2f} Accuracy {:.2f}%".format(rmse,acc))
@@ -196,9 +184,6 @@ def run(**kwargs):
                 acc,rmse = simp_comp[d]
                 logger.write("\t{} RMSE:{:.2f} Accuracy {:.2f}%".format(d,rmse,acc))
             
-                     
-#        for metric in metrics:
-#            metric.eval(train['true'],train['pred_reg'])
 
         is_best = False
         if epoch % Modelsavefreq == 0:

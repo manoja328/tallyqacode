@@ -15,7 +15,8 @@ def parse_args():
     parser.add_argument('--epochs', type=int,help='Number of epochs',default=50)
     parser.add_argument('--model', help='Model Q | I| QI | Main | RN',default='RN')
     parser.add_argument('--lr', type=float,default=0.001,help='Learning rate')
-    parser.add_argument('--save', help='save folder name',default='0')
+    parser.add_argument('--bs', type=int,default=32,help='Batch size')
+    parser.add_argument('--save', help='save folder name',default='01')
     parser.add_argument('--savefreq', help='save model frequency',type=int,default=1)
 #    parser.add_argument('--isVQAeval', help='vqa eval or not',type=bool,default=True)
     parser.add_argument('--seed', type=int, default=1111, help='random seed')
@@ -43,12 +44,12 @@ if __name__ == '__main__':
     device = torch.device("cuda" if use_cuda else "cpu")    
     kwargs = {'num_workers': 4, 'pin_memory': True} if use_cuda else {}
 
-    testset = CountDataset(file = ds['test'])
-    trainset = CountDataset(file = ds['train'],train=True)
+    testset = CountDataset(file = ds['test'],**config.global_config)
+    trainset = CountDataset(file = ds['train'],train=True,**config.global_config)
 
-    testloader = DataLoader(testset, batch_size=32,
+    testloader = DataLoader(testset, batch_size=args.bs,
                              shuffle=False, **kwargs)
-    trainloader = DataLoader(trainset, batch_size=32,
+    trainloader = DataLoader(trainset, batch_size=args.bs,
                          shuffle=True, **kwargs)
 
     models = { 'Q':Qmodel, 'I': Imodel, 'QI': QImodel ,'RN': RN }
@@ -59,7 +60,8 @@ if __name__ == '__main__':
 
     optimizer = torch.optim.Adam(model.parameters(),lr=args.lr)
 
-    run_kwargs = {   'N_classes': N_classes,
+    run_kwargs = {   'jsonfolder': config.global_config['jsonfolder'],
+                     'N_classes': N_classes,
                      'dsname': args.dsname,
                      'savefolder': savefolder, 
                      'isVQAeval': isVQAeval,

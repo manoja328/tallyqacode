@@ -7,25 +7,25 @@ import h5py
 
 class CountDataset(Dataset):
 
-    def __init__(self,file,train=False):
+    def __init__(self,**kwargs):
 
+        
+        file = kwargs.get('file')
+        
         with open(file,'rb') as f:
             self.data = pickle.load(f)
             
 #        self.data = self.data[:32]
 #        self.dictionary = dictionary
-
-               
-        self.pool_features_path_coco = '/media/manoj/hdd/IMGFEATS/resnet152.h5'
-        self.pool_features_path_genome = '/media/manoj/hdd/IMGFEATS/resnet152_genome.h5'
+             
+        self.pool_features_path_coco = kwargs.get('coco_pool_features')
+        self.pool_features_path_genome = kwargs.get('genome_pool_features')
         self.poolcoco_id_to_index =  self._poolcreate_coco_id_to_index(self.pool_features_path_coco)
         self.poolcoco_id_to_index_gen =  self._poolcreate_coco_id_to_index(self.pool_features_path_genome)        
 
-
-        #self.image_features_path_coco = '/media/manoj/hdd/bottomup_1_100/ssd/genome-trainval.h5'
-        self.image_features_path_coco = '/home/manoj/bottomup_1_100/ssd/genome-trainval.h5'
+        self.image_features_path_coco = kwargs.get('coco_bottomup')
         self.coco_id_to_index =  self.id_to_index(self.image_features_path_coco)  
-        self.image_features_path_genome = '/home/manoj/bottomup_1_100/ssd/genome_ourdb/genome-trainval.h5'
+        self.image_features_path_genome = kwargs.get('genome_bottomup')
         self.genome_id_to_index =  self.id_to_index(self.image_features_path_genome)        
 
     def id_to_index(self,path):

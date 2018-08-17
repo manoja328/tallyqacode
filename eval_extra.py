@@ -12,7 +12,9 @@ def evalvqa(evalset,predictions,isVQAeval=True):
     assert_eq(len(evalset) , len(predictions))
     
     for i,ent in enumerate(evalset):
-        qid =  ent['question_id']
+        #all qids are integers
+        qid =  int(ent['question_id'])
+        #all predictions/answers are string
         pred   =  str(predictions[qid])
         if isVQAeval:
             ansfreq = Counter([ ans['answer'] for ans in ent['answers']])
@@ -162,8 +164,8 @@ def main(**kwargs):
     isVQAeval = kwargs.get('isVQAeval')
     logger = kwargs.get('logger')    
     ds = kwargs.get('dsname')
+    jsonfolder = kwargs.get('jsonfolder')    
     testset = test_loader.dataset.data
-    
 
     detect_gt,predictions = get_detect(testset)
     logger.write("Detect:")
