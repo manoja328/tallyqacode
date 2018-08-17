@@ -192,6 +192,7 @@ class Logger(object):
                 print ("Save the logfile under different name.")
                 sys.exit(0)
 
+        self.dirname = dirname
         self.log_file = open(output_name, 'w')
         self.infos = {}
 
@@ -199,6 +200,13 @@ class Logger(object):
         vals = self.infos.setdefault(key, [])
         vals.append(val)
 
+
+    def dump_info(self):
+        "dump infos in infos.json file"
+        infopath = os.path.join(self.dirname,"infos.json")
+        with open(infopath,'w') as f:
+            json.dump(self.infos,f)
+        
     def log(self, extra_msg=''):
         msgs = [extra_msg]
         for key, vals in self.infos.iteritems():

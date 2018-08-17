@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dsname', help='dataset: Ourdb | HowmanyQA' , default='HowmanyQA')
     parser.add_argument('--epochs', type=int,help='Number of epochs',default=50)
-    parser.add_argument('--model', help='Model Q | I| QI | Main | RN',default='RN')
+    parser.add_argument('--model', help='Model Q | I| QI | Main | RN',default='Q')
     parser.add_argument('--lr', type=float,default=0.001,help='Learning rate')
     parser.add_argument('--bs', type=int,default=32,help='Batch size')
     parser.add_argument('--save', help='save folder name',default='01')

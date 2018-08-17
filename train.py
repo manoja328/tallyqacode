@@ -154,7 +154,7 @@ def run(**kwargs):
     N_classes = kwargs.get('N_classes')
     test_loader = kwargs.get('test_loader')
     testset = test_loader.dataset.data
-    early_stop = EarlyStopping(monitor='test_loss',patience=3)
+    early_stop = EarlyStopping(monitor='loss',patience=3)
     
     Modelsavefreq = 1
 
@@ -167,7 +167,9 @@ def run(**kwargs):
 
         logger.write('Epoch {}: ------'.format(epoch))
         logger.write('\tTrain Loss: {:.4f}'.format(train['loss']))
+        logger.append('train_losses',train['loss'])
         logger.write('\tTest Loss: {:.4f}'.format(test['loss']))
+        logger.append('test_losses',test['loss'])
         
         #clamp all output
         pred_reg = np.array(test['pred_reg'],dtype=np.uint64)
@@ -199,11 +201,12 @@ def run(**kwargs):
 
             save_checkpoint(savefolder,tbs,is_best)
 
+        logger.dump_info()
         early_stop.on_epoch_end(epoch,logs=test)
         if early_stop.stop_training:
             kwargs.get('optimizer').param_groups[0]['lr'] *= 0.8
             lr =  kwargs.get('optimizer').param_groups[0]['lr']
-            logger.write("New Learning rate: ",lr)
+            logger.write("New Learning rate: {} ".format(lr))
             early_stop.reset()
             #break
     logger.write('Finished Training')
