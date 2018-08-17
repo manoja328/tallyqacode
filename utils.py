@@ -28,6 +28,14 @@ def parsejson(jsonpath):
     js = json.load(open(jsonpath))    
     return js
 
+def filetostr(filepath):    
+    if not os.path.exists(filepath):
+        print ("JSON path not found!!")
+        return
+    with open(filepath,'r') as f:
+        data = f.read()
+    return data
+    
 
 def load_folder(folder, suffix):
     """return files with suffix , return str if one file only"""
