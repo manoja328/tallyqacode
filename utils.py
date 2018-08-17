@@ -6,7 +6,7 @@ import torch.nn as nn
 import datetime
 import shutil
 import json
-
+import sys
 
 EPS = 1e-7
 
@@ -168,6 +168,13 @@ class Logger(object):
         dirname = os.path.dirname(output_name)
         if not os.path.exists(dirname):
             os.mkdir(dirname)
+        else:
+            print("Given folder already exists and continuing with the")
+            print("operation will overwrite the logs.")
+            feedback = input("Continue [y/Y]?: ")
+            if feedback not in ['y','Y']:
+                print ("Save the logfile under different name.")
+                sys.exit(0)
 
         self.log_file = open(output_name, 'w')
         self.infos = {}
