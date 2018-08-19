@@ -166,74 +166,62 @@ def main(**kwargs):
     ds = kwargs.get('dsname')
     jsonfolder = kwargs.get('jsonfolder')    
     testset = test_loader.dataset.data
+    
+    json_paths ={}
+    json_paths['Mutan'] = os.path.join(jsonfolder,ds,'mutan')
+    json_paths['Zhang'] = os.path.join(jsonfolder,ds,'zhang')
+    json_paths['UpDown'] = os.path.join(jsonfolder,ds,'updown')
+
+    format_acc_rmse = "\tRMSE:{:.2f} Accuracy {:.2f}%"
+    format_acc_rmse_sc = "\t{} RMSE:{:.2f} Accuracy {:.2f}%"
 
     detect_gt,predictions = get_detect(testset)
     logger.write("Detect:")
     
     if isVQAeval:          
         acc,rmse = evalvqa(testset,predictions,isVQAeval)
-        logger.write("\tRMSE:{:.2f} Accuracy {:.2f}%".format(rmse,acc))         
-        HQAjson_path = '/home/manoj/Downloads/results_package.json'
+        logger.write(format_acc_rmse.format(rmse,acc))         
+        HQAjson_path = os.path.join(jsonfolder,'results_package.json')
         for i in [0,1,2,'IRLC']:
             key = str(i)
             logger.write("Guess {}".format(i))   
             VQA_acc, rmse = evalHQA(key,testset,jsonpath=HQAjson_path)
-            logger.write("\tRMSE:{:.2f} Accuracy {:.2f}%".format(rmse,VQA_acc))
+            logger.write(format_acc_rmse.format(rmse,VQA_acc))
 
 
-        logger.write("Mutan:")
-        jsonpath  = load_folder('/home/manoj/mutan/{}/mutan'.format(ds),"json")
-        predictions = eval_zhang_updown_mutan(testset,jsonpath)                    
-        acc,rmse = evalvqa(testset,predictions,isVQAeval)
-        logger.write("\tRMSE:{:.2f} Accuracy {:.2f}%".format(rmse,acc))
+        for method in ['Mutan','Zhang']:
+            logger.write(method)
+            jsonpath  = load_folder(json_paths[method],"json")
+            predictions = eval_zhang_updown_mutan(testset,jsonpath)                    
+            acc,rmse = evalvqa(testset,predictions,isVQAeval)
+            logger.write(format_acc_rmse.format(rmse,acc))
         
-        logger.write("Zhang:")
-        jsonpath  = load_folder('/home/manoj/mutan/{}/zhang'.format(ds),"json")    
-        predictions = eval_zhang_updown_mutan(testset,jsonpath)                    
-        acc,rmse = evalvqa(testset,predictions,isVQAeval)
-        logger.write("\tRMSE:{:.2f} Accuracy {:.2f}%".format(rmse,acc))
-
+        #from interpretable paper
         logger.write("UpDown:(from IRLC paper)")
-        logger.write("\tRMSE:{:.2f} Accuracy {:.2f}%".format(2.69,51.5))
+        logger.write(format_acc_rmse.format(2.69,51.5))
 
         
     else:
         simp_comp = eval_simp_comp(testset,predictions,baselines=True)
         for d in ['simple','complex']:
             acc,rmse = simp_comp[d]
-            logger.write("\t{} RMSE:{:.2f} Accuracy {:.2f}%".format(d,rmse,acc))
+            logger.write(format_acc_rmse_sc.format(d,rmse,acc))
             
         for i in [0,1,2]:  
             logger.write("Guess {}".format(i)) 
             for d in ['simple','complex']:
                 guess = simp_comp[d+"_guess"]
                 acc,rmse = guess[i]                             
-                logger.write("\t{} RMSE:{:.2f} Accuracy {:.2f}%".format(d,rmse,acc))
+                logger.write(format_acc_rmse_sc.format(d,rmse,acc))
         
    
-        logger.write("Mutan:")
-        jsonpath  = load_folder('/home/manoj/mutan/{}/mutan'.format(ds),"json")
-        predictions = eval_zhang_updown_mutan(testset,jsonpath)
-        simp_comp = eval_simp_comp(testset,predictions)
-        for d in ['simple','complex']:
-            acc,rmse = simp_comp[d]
-            logger.write("\t{} RMSE:{:.2f} Accuracy {:.2f}%".format(d,rmse,acc))
-        
-        logger.write("Zhang:")
-        jsonpath  = load_folder('/home/manoj/mutan/{}/zhang'.format(ds),"json")  
-        predictions = eval_zhang_updown_mutan(testset,jsonpath)
-        simp_comp = eval_simp_comp(testset,predictions)
-        for d in ['simple','complex']:
-            acc,rmse = simp_comp[d]
-            logger.write("\t{} RMSE:{:.2f} Accuracy {:.2f}%".format(d,rmse,acc))
-
-
-        logger.write("Updown:")
-        jsonpath  = load_folder('/home/manoj/mutan/{}/updown'.format(ds),"json")  
-        predictions = eval_zhang_updown_mutan(testset,jsonpath)
-        simp_comp = eval_simp_comp(testset,predictions)
-        for d in ['simple','complex']:
-            acc,rmse = simp_comp[d]
-            logger.write("\t{} RMSE:{:.2f} Accuracy {:.2f}%".format(d,rmse,acc))
+        for method in json_paths:
+            logger.write(method)
+            jsonpath  = load_folder(json_paths[method],"json")
+            predictions = eval_zhang_updown_mutan(testset,jsonpath)
+            simp_comp = eval_simp_comp(testset,predictions)
+            for d in ['simple','complex']:
+                acc,rmse = simp_comp[d]
+                logger.write(format_acc_rmse_sc.format(d,rmse,acc))
 
 
