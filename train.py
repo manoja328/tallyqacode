@@ -37,108 +37,99 @@ def main(**kwargs):
     #reglossfn = nn.MSELoss()
     #reglossfn = nn.L1Loss()
     clslossfn = nn.CrossEntropyLoss()
-
-    for i, data in enumerate(loader):
-
-
-        qid,wholefeat,pooled,boxes,labels,ques,box_coords,index = data
-        
-        idxs.extend(qid.tolist())
     
-        labels = labels.long()
-        
-        index  = index.long()
-        B = wholefeat.size(0)
-        #converts 14_14 to 7_7
-        #change pool size
-        pooled = F.avg_pool2d(pooled.permute(0,3,1,2),8,2)
-        Npool = pooled.size(-1)
-        pooled = pooled.view(B,2048,Npool**2)
-        pooled = pooled.permute(0,2,1)
-        pooled = F.normalize(pooled,p=2,dim=-1)
-        #print (pooled.shape)
+    with torch.set_grad_enabled(istrain):
+        for i, data in enumerate(loader):
+            qid,wholefeat,pooled,boxes,labels,ques,box_coords,index = data            
+            idxs.extend(qid.tolist())        
+            labels = labels.long()            
+            index  = index.long()
+            B = wholefeat.size(0)
+            #converts 14_14 to 7_7
+            #change pool size
+            pooled = F.avg_pool2d(pooled.permute(0,3,1,2),8,2)
+            Npool = pooled.size(-1)
+            pooled = pooled.view(B,2048,Npool**2)
+            pooled = pooled.permute(0,2,1)
+            pooled = F.normalize(pooled,p=2,dim=-1)
+            #print (pooled.shape)
+    
+    
+            wholefeat = F.normalize(wholefeat,p=2,dim=-1)
+    
+            #box_coords_add1 = torch.cat([torch.ones(B,N,1),box_coords],dim=-1)
+            #box_coords_add1 = F.normalize(box_coords_add1,dim=-1)
+    
+            true.extend(labels.tolist())
+    
+            #normalize the box feats
+            boxes = F.normalize(boxes,p=2,dim=-1)
+            box_feats = boxes.to(device)
+            box_coords = box_coords.to(device)
+            labels = labels.to(device)
+            q_feats = ques.to(device)
+    #       coord_feats = Variable(coords.type(dtype))
+    
+    
+            optimizer.zero_grad()
+            
+            
+            net_kwargs = { 'wholefeat':wholefeat,
+                           'pooled' :pooled,
+                           'box_feats':box_feats,
+                           'q_feats':q_feats,
+                           'box_coords':box_coords,
+                           'index':index}
 
-
-        wholefeat = F.normalize(wholefeat,p=2,dim=-1)
-
-        #box_coords_add1 = torch.cat([torch.ones(B,N,1),box_coords],dim=-1)
-        #box_coords_add1 = F.normalize(box_coords_add1,dim=-1)
-
-        true.extend(labels.tolist())
-
-        #normalize the box feats
-        boxes = F.normalize(boxes,p=2,dim=-1)
-        box_feats = boxes.to(device)
-        box_coords = box_coords.to(device)
-        labels = labels.to(device)
-        q_feats = ques.to(device)
-#       coord_feats = Variable(coords.type(dtype))
-
-
-        optimizer.zero_grad()
-        
-        
-        net_kwargs = { 'wholefeat':wholefeat,
-                       'pooled' :pooled,
-                       'box_feats':box_feats,
-                       'q_feats':q_feats,
-                       'box_coords':box_coords,
-                       'index':index}
-        
-               
-        if istrain:
-             out = net(**net_kwargs)
-                
-        else:
-            with torch.no_grad():
-                out = net(**net_kwargs)
-
-#        #sometimes in a batch only 1 example at the end
-#        if out.dim() == 1: # add one more dimension
-#            out = out.unsqueeze(0)
-
-#        #print("Dataloader : {:2.2f} s".format(time.time() - testtime))
-#        if out.size(1) > 1: # if classification
-#            #print ('using classification')
-#            loss = clslossfn(out, labels.long())
-#            _,clspred = torch.max(out,-1)
-#            pred_reg.extend(clspred.data.cpu().numpy().ravel())
-
-#        elif out.size(1) == 1:  # if regression
-            #print ('using regression')
-        loss = reglossfn(out,labels.float())
-        #round the output
-        regpred = torch.round(out.data.cpu()).numpy().ravel()
-        pred_reg.extend(regpred)
-
-        loss_meter.update(loss.item())
-
-        if istrain:
-            #scheduler.step()
-            #optimizer.zero_grad()
-            loss.backward()
-            nn.utils.clip_grad_norm_(net.parameters(), 0.5)
-            optimizer.step()
-
-        if i == 0 and epoch == 0 and istrain:
-            print ("Starting loss: {:.4f}".format(loss.item()))
-
-
-        if i % Nprint == Nprint-1:
-            infostr = "Epoch [{}]:Iter [{}]/[{}] Loss: {:.4f} Time: {:2.2f} s"
-            printinfo = infostr.format(epoch , i, len(loader),
-                                       loss_meter.avg,time.time() - start_time)
-
-            print (printinfo)
-
-    print("Completed in: {:2.2f} s".format(time.time() - start_time))
-    ent = {}
-    ent['true'] = true
-    ent['pred_reg'] = pred_reg
-    ent['pred_cls'] = pred_reg
-    ent['loss'] = loss_meter.avg
-    ent['qids'] = idxs
-    return ent
+            out = net(**net_kwargs)
+                       
+    #        #sometimes in a batch only 1 example at the end
+    #        if out.dim() == 1: # add one more dimension
+    #            out = out.unsqueeze(0)
+    
+    #        #print("Dataloader : {:2.2f} s".format(time.time() - testtime))
+    #        if out.size(1) > 1: # if classification
+    #            #print ('using classification')
+    #            loss = clslossfn(out, labels.long())
+    #            _,clspred = torch.max(out,-1)
+    #            pred_reg.extend(clspred.data.cpu().numpy().ravel())
+    
+    #        elif out.size(1) == 1:  # if regression
+                #print ('using regression')
+            loss = reglossfn(out,labels.float())
+            #round the output
+            regpred = torch.round(out.data.cpu()).numpy().ravel()
+            pred_reg.extend(regpred)
+    
+            loss_meter.update(loss.item())
+    
+            if istrain:
+                #scheduler.step()
+                #optimizer.zero_grad()
+                loss.backward()
+                #gradient clipping
+                nn.utils.clip_grad_norm_(net.parameters(), 0.5)
+                optimizer.step()
+    
+            if i == 0 and epoch == 0 and istrain:
+                print ("Starting loss: {:.4f}".format(loss.item()))
+    
+    
+            if i % Nprint == Nprint-1:
+                infostr = "Epoch [{}]:Iter [{}]/[{}] Loss: {:.4f} Time: {:2.2f} s"
+                printinfo = infostr.format(epoch , i, len(loader),
+                                           loss_meter.avg,time.time() - start_time)
+    
+                print (printinfo)
+    
+        print("Completed in: {:2.2f} s".format(time.time() - start_time))
+        ent = {}
+        ent['true'] = true
+        ent['pred_reg'] = pred_reg
+        ent['pred_cls'] = pred_reg
+        ent['loss'] = loss_meter.avg
+        ent['qids'] = idxs
+        return ent
 
 
 
