@@ -116,6 +116,12 @@ metrics = {
 }
 
 
+def adjust_learning_rate(optimizer, newLR):
+    """Sets the learning rate to newLR"""
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = newLR
+
+
 def save_checkpoint(savefolder,tbs, is_best=False):
     epoch = tbs['epoch']
     
@@ -185,11 +191,10 @@ class Logger(object):
         if not os.path.exists(dirname):
             os.mkdir(dirname)
         else:
-            print("Given folder already exists and continuing with the")
-            print("operation will overwrite the logs.")
-            feedback = input("Continue [y/Y]?: ")
+            print("Log folder already exists !!!!")
+            feedback = input("Overwrite & Continue [y/Y]?: ")
             if feedback not in ['y','Y']:
-                print ("Save the logfile under different name.")
+                print ("Restart and Save the logfile under different name.")
                 sys.exit(0)
 
         self.dirname = dirname
