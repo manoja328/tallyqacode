@@ -201,9 +201,9 @@ class Logger(object):
         vals.append(val)
 
 
-    def dump_info(self):
+    def dump_info(self,filename="infos.json"):
         "dump infos in infos.json file"
-        infopath = os.path.join(self.dirname,"infos.json")
+        infopath = os.path.join(self.dirname,filename)
         with open(infopath,'w') as f:
             json.dump(self.infos,f)
         
