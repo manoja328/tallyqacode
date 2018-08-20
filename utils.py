@@ -217,6 +217,10 @@ class Logger(object):
         self.infos = {}
         return msg
 
+    def write_silent(self, msg):
+        self.log_file.write(msg + '\n')
+        self.log_file.flush()
+
     def write(self, msg):
         self.log_file.write(msg + '\n')
         self.log_file.flush()

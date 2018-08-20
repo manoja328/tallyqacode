@@ -26,7 +26,9 @@ if __name__ == '__main__':
     js = utils.parsejson(info_json)
     
     for key in js:
-        plt.plot(js[key],label=key)
+        L = len(js[key])
+        plt.plot(range(L),js[key],'o')
+        plt.plot(range(L),js[key],label=key)
     plt.xlabel("Epochs")
     plt.legend()
     plt.show()
