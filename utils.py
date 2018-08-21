@@ -136,16 +136,24 @@ def save_checkpoint(savefolder,tbs, is_best=False):
 
 def load_checkpoint(filename,model,optimizer):
      #resume = 'a/checkpoint-1.pth'
-     if os.path.isfile(filename):
+     meta = {}  
+     if os.path.exists(filename):
          checkpoint = torch.load(filename)
          epoch = checkpoint['epoch']
          print("=> loading checkpoint '{}' at epoch: {}".format(filename,epoch))
          model.load_state_dict(checkpoint['state_dict'])
          optimizer.load_state_dict(checkpoint['optimizer'])
          print("=> loaded checkpoint '{}' (epoch {})"
-               .format(filename, checkpoint['epoch']))
+               .format(filename, epoch))
+            
+         for key in checkpoint:
+             if key not in ['epoch','state_dict','optimizer']:
+                 meta[key] = checkpoint[key]
+         
+         return epoch+1 , meta
      else:
          print("=> no checkpoint found at '{}'".format(filename))
+         return 0, meta
 
 
 class AverageMeter:
@@ -191,14 +199,13 @@ class Logger(object):
         if not os.path.exists(dirname):
             os.mkdir(dirname)
         else:
-            print("Log folder already exists !!!!")
-            feedback = input("Overwrite & Continue [y/Y]?: ")
+            feedback = input("Log folder already exists !!!! \nOverwrite & Continue [y/Y]?: ")
             if feedback not in ['y','Y']:
                 print ("Restart and Save the logfile under different name.")
                 sys.exit(0)
 
         self.dirname = dirname
-        self.log_file = open(output_name, 'w')
+        self.log_file = open(output_name, 'a+')
         self.infos = {}
 
     def append(self, key, val):
