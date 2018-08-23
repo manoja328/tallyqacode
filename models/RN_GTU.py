@@ -10,9 +10,10 @@ import torch
 import torch.nn as nn
 
 class RN(nn.Module):
-    def __init__(self,Ncls):
+    def __init__(self,Ncls,debug=False):
         super().__init__()
 
+        
         I_CNN = 2048
         Q_GRU_out = 1024
         Q_embedding = 300
@@ -28,7 +29,7 @@ class RN(nn.Module):
         
         self.f = nn.Linear(in_features=hidden,out_features=1,bias=False)
         
-
+        self.debug = debug
     def forward(self,wholefeat,pooled,box_feats,q_feats,box_coords,index):
 
 
@@ -56,5 +57,8 @@ class RN(nn.Module):
             counts.append(count)            
             
         ret = torch.stack(counts,0)
+        if self.debug:
+            return ret,wsi
+        
         return ret
 
