@@ -8,6 +8,8 @@ from utils import save_checkpoint
 import utils
 import numpy as np
 import eval_extra
+from CLR import CyclicLR
+from utils import adjust_learning_rate
 #%%
 def main(**kwargs):
     
@@ -54,7 +56,7 @@ def main(**kwargs):
             pooled = F.normalize(pooled,p=2,dim=-1)
             #print (pooled.shape)
     
-    
+            pooled = pooled.to(device)
             wholefeat = F.normalize(wholefeat,p=2,dim=-1)
     
             #box_coords_add1 = torch.cat([torch.ones(B,N,1),box_coords],dim=-1)
@@ -82,33 +84,27 @@ def main(**kwargs):
                            'index':index}
 
             out = net(**net_kwargs)
-                       
-    #        #sometimes in a batch only 1 example at the end
-    #        if out.dim() == 1: # add one more dimension
-    #            out = out.unsqueeze(0)
+                          
+            if out.ndimension() == 1:  # if regression
+                loss = reglossfn(out,labels.float())
+                #round the output
+                regpred = torch.round(out.data.cpu()).numpy().ravel()
+                pred_reg.extend(regpred)
     
-    #        #print("Dataloader : {:2.2f} s".format(time.time() - testtime))
-    #        if out.size(1) > 1: # if classification
-    #            #print ('using classification')
-    #            loss = clslossfn(out, labels.long())
-    #            _,clspred = torch.max(out,-1)
-    #            pred_reg.extend(clspred.data.cpu().numpy().ravel())
     
-    #        elif out.size(1) == 1:  # if regression
-                #print ('using regression')
-            loss = reglossfn(out,labels.float())
-            #round the output
-            regpred = torch.round(out.data.cpu()).numpy().ravel()
-            pred_reg.extend(regpred)
-    
-            loss_meter.update(loss.item())
-    
+            else: # if classification
+                loss = clslossfn(out, labels.long())
+                _,clspred = torch.max(out,-1)
+                pred_reg.extend(clspred.data.cpu().numpy().ravel())
+        
+            loss_meter.update(loss.item())   
             if istrain:
                 #scheduler.step()
                 #optimizer.zero_grad()
                 loss.backward()
                 #gradient clipping
-                nn.utils.clip_grad_norm_(net.parameters(), 0.5)
+                if kwargs.get('clip_norm'):
+                    nn.utils.clip_grad_norm_(net.parameters(), kwargs.get('clip_norm'))
                 optimizer.step()
     
             if i == 0 and epoch == 0 and istrain:
@@ -144,12 +140,16 @@ def run(**kwargs):
     isVQAeval = kwargs.get('isVQAeval')
     N_classes = kwargs.get('N_classes')
     test_loader = kwargs.get('test_loader')
+    start_epoch = kwargs.get('start_epoch')
     testset = test_loader.dataset.data
     early_stop = EarlyStopping(monitor='loss',patience=3)
     
+    clr = CyclicLR(base_lr=0.001, max_lr=0.006,
+                        step_size=1000., mode='triangular2')
+    
     Modelsavefreq = 1
 
-    for epoch in range(epochs):
+    for epoch in range(start_epoch,epochs):
 
         kwargs['epoch'] = epoch
         train = main(istrain=True,**kwargs)
@@ -193,13 +193,20 @@ def run(**kwargs):
             save_checkpoint(savefolder,tbs,is_best)
 
         logger.dump_info()
+        
+#        clr.clr_iterations = (epoch+1)* 1000
+#        adjust_learning_rate(kwargs.get('optimizer'), clr.nextlr())
+#        lr =  kwargs.get('optimizer').param_groups[0]['lr']
+#        logger.write("New Learning rate: {} ".format(lr))
+        
         early_stop.on_epoch_end(epoch,logs=test)
         if early_stop.stop_training:
-            kwargs.get('optimizer').param_groups[0]['lr'] *= 0.8
             lr =  kwargs.get('optimizer').param_groups[0]['lr']
+            adjust_learning_rate(kwargs.get('optimizer'), lr* 0.8)
             logger.write("New Learning rate: {} ".format(lr))
             early_stop.reset()
             #break
+            
     logger.write('Finished Training')
 
 
