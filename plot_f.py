@@ -1,30 +1,79 @@
 import argparse
 import torch
 import os
-from utils import Logger
 import config
-from data import CountDataset
-from torch.utils.data import  DataLoader
-from train import run
-from models.baseline import Qmodel,Imodel,QImodel
-from models.RN_softcount import RN
-import inspect
+from models.RN_GTU import RN
 from utils import load_checkpoint
+import h5py
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+from models.language import getglove
+
+image_features_path = config.global_config['coco_bottomup'] 
+features_file = h5py.File(image_features_path, 'r')
+
+def _create_coco_id_to_index():
+    """ Create a mapping from a COCO image id into the corresponding index into the h5 file """
+    with h5py.File(image_features_path, 'r') as features_file:
+        coco_ids = features_file['ids'][()]
+    coco_id_to_index = {id: i for i, id in enumerate(coco_ids)}
+    return coco_id_to_index   
+     
+def get_image_name_old(subtype='train2014', image_id='1', format='%s/COCO_%s_%012d.jpg'):
+    return format%(subtype, subtype, image_id)
+
+def retbox(x):
+    return np.array([[x[0],x[0],x[2],x[2],x[0]],[x[1],x[3],x[3],x[1],x[1]]]).T
+         
+
+def load_image_coco(image_id):
+    """ Load an image """      
+    index = coco_id_to_index[image_id]
+    L = features_file['num_boxes'][index]
+    W = features_file['widths'][index]
+    H = features_file['heights'][index]
+    box_feats = features_file['features'][index]
+    box_locations = features_file['boxes'][index]   
+    return L,W,H,box_feats.T,box_locations.T
+
+coco_id_to_index = _create_coco_id_to_index()    
+cocoids =  list(coco_id_to_index.keys())
+
+
+
+def saveimge(image_id):
+    if image_id in coco_id_to_index:
+        L,W,H,_,boxes =  load_image_coco(image_id)
+        try:
+            image = get_image_name_old(subtype='train2014', image_id=image_id)
+            npimg = Image.open(os.path.join('/media/manoj/hdd/VQA/Images/mscoco/',image)) 
+        except:
+            print ("In val")
+            image = get_image_name_old(subtype='val2014', image_id=image_id)
+            npimg = Image.open(os.path.join('/media/manoj/hdd/VQA/Images/mscoco/',image)) 
+        plt.figure()
+        plt.imshow(npimg)
+        for i in range(len(boxes)):
+           xmin , ymin,xmax,ymax  = boxes[i]
+           x =[xmin,ymin,xmax,ymax]
+           rect = retbox(x)
+           plt.plot(rect[:,0],rect[:,1],'r',linewidth=1.0)
+        plt.axis('off')
+        plt.tight_layout()
+        imglast = image.split("/")[-1]
+        plt.savefig("ann_{}".format(imglast),dpi=150)
+
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dsname', help='dataset: Ourdb | HowmanyQA' , default='HowmanyQA')
     parser.add_argument('--epochs', type=int,help='Number of epochs',default=50)
     parser.add_argument('--model', help='Model Q | I| QI | Main | RN',default='RN')
-    parser.add_argument('--lr', type=float,default=0.0003,help='Learning rate')
-    parser.add_argument('--bs', type=int,default=32,help='Batch size')
     parser.add_argument('--save', help='save folder name',default='NAC')
-    parser.add_argument('--savefreq', help='save model frequency',type=int,default=1)
-    parser.add_argument('--seed', type=int, default=1111, help='random seed')
-    #parser.add_argument('--resume', type=str, default='Ourdb_RN_padfront/chkpoint_18.pth', help='resume file name')
     parser.add_argument('--resume', type=str, default=None, help='resume file name')
-    parser.add_argument('--clip_norm', type=float, default=200.0, help='norm clipping')
-    parser.add_argument('--expl', type=str, default='info', help='extra explanation of the method')
+    parser.add_argument('--q', type=str, default="How many dogs?", help='question')
     args = parser.parse_args()
     return args
 
@@ -36,57 +85,46 @@ if __name__ == '__main__':
     if args.dsname == 'HowmanyQA':
         isVQAeval = True
 
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
-
     ds = config.dataset[args.dsname]
     N_classes = ds['N_classes']
     savefolder = '_'.join([args.dsname,args.model,args.save])
-    logger = Logger(os.path.join(savefolder, 'log.txt'))
-    logger.write("== {} ==".format(args.expl))
-    logger.write(str(args).replace(',',',\n'))
+
 
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")    
     loader_kwargs = {'num_workers': 4} if use_cuda else {}
-    models = { 'Q':Qmodel, 'I': Imodel, 'QI': QImodel ,'RN': RN }    
-    model = models[args.model](N_classes)
+
+    model = RN(N_classes,debug = True)
     model = model.to(device)
     print (model)
 
-    optimizer = torch.optim.Adam(model.parameters(),lr=args.lr)
-   
+    optimizer = torch.optim.Adam(model.parameters())
     start_epoch = 0
     if args.resume:
          start_epoch,meta = load_checkpoint(args.resume,model,optimizer)
-    else:
-        #log source code of model being used
-        logger.write_silent(inspect.getsource(type(model)))
-        logger.write_silent(repr(model))
+         
+    image_id = np.random.choice(cocoids)
+    L, W, H ,box_feats,box_coords = load_image_coco(image_id)    
 
-    testds = CountDataset(file = ds['test'],**config.global_config)
-    trainds = CountDataset(file = ds['train'],istrain=True,**config.global_config)
+    q_feats = getglove(args.q)
+    q_feats = torch.from_numpy(q_feats)
+    box_feats = torch.from_numpy(box_feats)
+
+
+    box_feats = box_feats.to(device).unsqueeze(0)
+    q_feats = q_feats.to(device).unsqueeze(0)
+
+    net_kwargs = { 'wholefeat': None,
+               'pooled' : None,
+               'box_feats':box_feats,
+               'q_feats':q_feats,
+               'box_coords':None,
+               'index':[L] }
+
+    out,fvals = model(**net_kwargs)
+    print (out,fvals)
     
+    saveimge(image_id)
+         
 
-    testloader = DataLoader(testds, batch_size=args.bs,
-                             shuffle=False, **loader_kwargs)
-    trainloader = DataLoader(trainds, batch_size=args.bs,
-                         shuffle=True, **loader_kwargs)
-    
-    run_kwargs = {   'start_epoch': start_epoch,
-                     'clip_norm': args.clip_norm,
-                     'jsonfolder': config.global_config['jsonfolder'],
-                     'N_classes': N_classes,
-                     'dsname': args.dsname,
-                     'savefolder': savefolder, 
-                     'isVQAeval': isVQAeval,
-                     'device' : device, 
-                     'model' :  model,
-                     'train_loader': trainloader,
-                     'test_loader': testloader,
-                     'optimizer' : optimizer,
-                     'epochs': args.epochs,
-                     'logger':logger
-                  }
 
-    run(**run_kwargs)

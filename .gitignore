@@ -1,5 +1,6 @@
 feats
 __pycache__/
 *.pyc
+*.jpg
 HowmanyQA*/
 Ourdb*/
