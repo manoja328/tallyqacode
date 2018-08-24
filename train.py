@@ -117,7 +117,7 @@ def main(**kwargs):
                                            loss_meter.avg,time.time() - start_time)
     
                 print (printinfo)
-    
+        
         print("Completed in: {:2.2f} s".format(time.time() - start_time))
         ent = {}
         ent['true'] = true
@@ -152,11 +152,12 @@ def run(**kwargs):
     for epoch in range(start_epoch,epochs):
 
         kwargs['epoch'] = epoch
+        start_time = time.time()
         train = main(istrain=True,**kwargs)
         test =  main(istrain=False,**kwargs)
+        total_time  = time.time() - start_time
 
-
-        logger.write('Epoch {}: ------'.format(epoch))
+        logger.write('Epoch {} Time {:2.2f} s ------'.format(epoch,total_time))
         logger.write('\tTrain Loss: {:.4f}'.format(train['loss']))
         logger.append('train_losses',train['loss'])
         logger.write('\tTest Loss: {:.4f}'.format(test['loss']))
