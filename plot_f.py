@@ -9,8 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 from models.language import getglove
+from data import CountDataset
 
-image_features_path = config.global_config['coco_bottomup'] 
+image_features_path = config.global_config['genome_bottomup'] 
 features_file = h5py.File(image_features_path, 'r')
 
 def _create_coco_id_to_index():
@@ -40,30 +41,34 @@ def load_image_coco(image_id):
 coco_id_to_index = _create_coco_id_to_index()    
 cocoids =  list(coco_id_to_index.keys())
 
-
-
-def saveimge(image_id):
+def saveimage(ent,vals):
+    C = sum(vals)
+    image = os.path.join('/home/manoj',ent['image'])
+    image_id = ent['image_id']
+    #for our dataset where ID has 9 in front 
+    if 'VG_100K' in ent['image']:
+        image_id = int(str(image_id)[1:]) #remove 9
     if image_id in coco_id_to_index:
         L,W,H,_,boxes =  load_image_coco(image_id)
-        try:
-            image = get_image_name_old(subtype='train2014', image_id=image_id)
-            npimg = Image.open(os.path.join('/media/manoj/hdd/VQA/Images/mscoco/',image)) 
-        except:
-            print ("In val")
-            image = get_image_name_old(subtype='val2014', image_id=image_id)
-            npimg = Image.open(os.path.join('/media/manoj/hdd/VQA/Images/mscoco/',image)) 
+        npimg = Image.open(image)      
+#        print (npimg.width,npimg.height)
         plt.figure()
         plt.imshow(npimg)
-        for i in range(len(boxes)):
+        for i in range(L):
            xmin , ymin,xmax,ymax  = boxes[i]
            x =[xmin,ymin,xmax,ymax]
            rect = retbox(x)
-           plt.plot(rect[:,0],rect[:,1],'r',linewidth=1.0)
-        plt.axis('off')
-        plt.tight_layout()
+           val = vals[i]
+           plt.plot(rect[:,0],rect[:,1],'y',linewidth=1.0)
+           plt.text(rect[0,0], rect[0,1],"{:.2f}".format(val),color='r', fontsize=10)
+#        plt.axis('off')
         imglast = image.split("/")[-1]
+        plt.title("Total Count: {:.2f} GT: {}".format(C,ent['answer']))
+        plt.xlabel("{}".format(ent['question']))
         plt.savefig("ann_{}".format(imglast),dpi=150)
 
+    else:
+        print ("Image-id {} not found".format(image_id))
 
 
 def parse_args():
@@ -106,10 +111,15 @@ if __name__ == '__main__':
     image_id = np.random.choice(cocoids)
     L, W, H ,box_feats,box_coords = load_image_coco(image_id)    
 
-    q_feats = getglove(args.q)
+    testds = CountDataset(file = ds['test'],**config.global_config)
+    testset = testds.data
+
+    ent = np.random.choice(testset)
+    print (ent)
+
+    q_feats = getglove(ent['question'])
     q_feats = torch.from_numpy(q_feats)
     box_feats = torch.from_numpy(box_feats)
-
 
     box_feats = box_feats.to(device).unsqueeze(0)
     q_feats = q_feats.to(device).unsqueeze(0)
@@ -122,9 +132,10 @@ if __name__ == '__main__':
                'index':[L] }
 
     out,fvals = model(**net_kwargs)
-    print (out,fvals)
-    
-    saveimge(image_id)
+    print ("Count val: ",out.item())
+    fvals = fvals.squeeze(1).tolist()
+    print (fvals)
+    saveimage(ent,fvals)
          
 
 
