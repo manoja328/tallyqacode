@@ -41,13 +41,18 @@ def load_image_coco(image_id):
 coco_id_to_index = _create_coco_id_to_index()    
 cocoids =  list(coco_id_to_index.keys())
 
-def saveimage(ent,vals):
-    C = sum(vals)
-    image = os.path.join('/home/manoj',ent['image'])
+def getimageid(ent):
     image_id = ent['image_id']
     #for our dataset where ID has 9 in front 
     if 'VG_100K' in ent['image']:
         image_id = int(str(image_id)[1:]) #remove 9
+    return image_id
+
+
+def saveimage(ent,vals):
+    C = sum(vals)
+    image = os.path.join('/home/manoj',ent['image'])
+    image_id = getimageid(ent)
     if image_id in coco_id_to_index:
         L,W,H,_,boxes =  load_image_coco(image_id)
         npimg = Image.open(image)      
@@ -63,7 +68,7 @@ def saveimage(ent,vals):
            plt.text(rect[0,0], rect[0,1],"{:.2f}".format(val),color='r', fontsize=10)
 #        plt.axis('off')
         imglast = image.split("/")[-1]
-        plt.title("Total Count: {:.2f} GT: {}".format(C,ent['answer']))
+        plt.title("Prediction: {:.2f} Ground truth: {}".format(C,ent['answer']))
         plt.xlabel("{}".format(ent['question']))
         plt.savefig("ann_{}".format(imglast),dpi=150)
 
@@ -73,12 +78,10 @@ def saveimage(ent,vals):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dsname', help='dataset: Ourdb | HowmanyQA' , default='HowmanyQA')
-    parser.add_argument('--epochs', type=int,help='Number of epochs',default=50)
+    parser.add_argument('--dsname', help='dataset: Ourdb | HowmanyQA' , default='Ourdb')
     parser.add_argument('--model', help='Model Q | I| QI | Main | RN',default='RN')
-    parser.add_argument('--save', help='save folder name',default='NAC')
-    parser.add_argument('--resume', type=str, default=None, help='resume file name')
-    parser.add_argument('--q', type=str, default="How many dogs?", help='question')
+    parser.add_argument('--save', help='save folder name',default='padfront')
+    parser.add_argument('--resume', type=str, default='Ourdb_RN_padfront/chkpoint_16.pth', help='resume file name')
     args = parser.parse_args()
     return args
 
@@ -108,14 +111,15 @@ if __name__ == '__main__':
     if args.resume:
          start_epoch,meta = load_checkpoint(args.resume,model,optimizer)
          
-    image_id = np.random.choice(cocoids)
-    L, W, H ,box_feats,box_coords = load_image_coco(image_id)    
+  
 
     testds = CountDataset(file = ds['test'],**config.global_config)
     testset = testds.data
 
     ent = np.random.choice(testset)
     print (ent)
+    image_id = getimageid(ent)    
+    L, W, H ,box_feats,_ = load_image_coco(image_id)  
 
     q_feats = getglove(ent['question'])
     q_feats = torch.from_numpy(q_feats)
@@ -131,9 +135,9 @@ if __name__ == '__main__':
                'box_coords':None,
                'index':[L] }
 
-    out,fvals = model(**net_kwargs)
+    out,scores = model(**net_kwargs)
     print ("Count val: ",out.item())
-    fvals = fvals.squeeze(1).tolist()
+    fvals = scores.squeeze(1).tolist()
     print (fvals)
     saveimage(ent,fvals)
          
