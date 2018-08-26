@@ -7,9 +7,7 @@ from data import CountDataset
 from torch.utils.data import  DataLoader
 from train import run
 from models.baseline import Qmodel,Imodel,QImodel
-from models.RN_sigmoid import RN
-#from models.RN_NAC import RN
-#from models.RN_noloop import RN
+from models import RN_NAC,RN_GTU,RN_BGOG
 import inspect
 from utils import load_checkpoint
 
@@ -52,7 +50,8 @@ if __name__ == '__main__':
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")    
     loader_kwargs = {'num_workers': 4} if use_cuda else {}
-    models = { 'Q':Qmodel, 'I': Imodel, 'QI': QImodel ,'RN': RN }    
+    models = { 'Q':Qmodel, 'I': Imodel, 'QI': QImodel ,'RN_BGOG': RN_BGOG.RN ,
+              'RN_GTU': RN_GTU.RN,'RN_NAC': RN_NAC.RN } 
     model = models[args.model](N_classes)
     model = model.to(device)
     print (model)
