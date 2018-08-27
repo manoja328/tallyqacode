@@ -83,7 +83,7 @@ def init_net(net, net_file):
         net.apply(weights_init)
 
 
-def _get_current_time():
+def get_current_time():
     return datetime.datetime.now().strftime("%B %d, %Y - %I:%M%p")
 
 

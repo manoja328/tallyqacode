@@ -10,6 +10,7 @@ from models.baseline import Qmodel,Imodel,QImodel
 from models import RN_NAC,RN_GTU,RN_BGOG
 import inspect
 from utils import load_checkpoint
+from utils import get_current_time
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -44,8 +45,8 @@ if __name__ == '__main__':
     N_classes = ds['N_classes']
     savefolder = '_'.join([args.dsname,args.model,args.save])
     logger = Logger(os.path.join(savefolder, 'log.txt'))
-    logger.write("== {} ==".format(args.expl))
-    logger.write(str(args).replace(',',',\n'))
+    logger.write("==== {} ====".format(get_current_time()))
+
 
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")    
@@ -62,9 +63,12 @@ if __name__ == '__main__':
     if args.resume:
          start_epoch,meta = load_checkpoint(args.resume,model,optimizer)
     else:
+        logger.write("== {} ==".format(args.expl))
+        logger.write(str(args).replace(',',',\n'))
         #log source code of model being used
         logger.write_silent(inspect.getsource(type(model)))
         logger.write_silent(repr(model))
+
 
     testds = CountDataset(file = ds['test'],**config.global_config)
     trainds = CountDataset(file = ds['train'],istrain=True,**config.global_config)

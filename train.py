@@ -75,7 +75,6 @@ def main(**kwargs):
     
             optimizer.zero_grad()
             
-            
             net_kwargs = { 'wholefeat':wholefeat,
                            'pooled' :pooled,
                            'box_feats':box_feats,
@@ -100,7 +99,6 @@ def main(**kwargs):
             loss_meter.update(loss.item())   
             if istrain:
                 #scheduler.step()
-                #optimizer.zero_grad()
                 loss.backward()
                 #gradient clipping
                 if kwargs.get('clip_norm'):
@@ -131,9 +129,6 @@ def main(**kwargs):
 
 def run(**kwargs):
 
-    #DETECT, MUTAN , Zhang , UPdown baselines
-    eval_extra.main(**kwargs)  
-
     savefolder = kwargs.get('savefolder')
     logger = kwargs.get('logger')
     epochs = kwargs.get('epochs')
@@ -141,6 +136,11 @@ def run(**kwargs):
     N_classes = kwargs.get('N_classes')
     test_loader = kwargs.get('test_loader')
     start_epoch = kwargs.get('start_epoch')
+    
+    #DETECT, MUTAN , Zhang , UPdown baselines
+    if start_epoch == 0: # if not resuming
+        eval_extra.main(**kwargs) 
+        
     testset = test_loader.dataset.data
     early_stop = EarlyStopping(monitor='loss',patience=3)
     
