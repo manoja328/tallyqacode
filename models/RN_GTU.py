@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 
 class RN(nn.Module):
-    def __init__(self,Ncls,debug=False):
+    def __init__(self,Ncls,debug=False,**kwargs):
         super().__init__()
 
         
@@ -52,13 +52,15 @@ class RN(nn.Module):
             g = torch.sigmoid(self.Wprime(b_full))
             si = torch.mul(y_tilde, g)# gating
     
-            wsi = torch.sigmoid(self.f(si))
-            count = wsi.sum() 
+            scores = torch.sigmoid(self.f(si))
+            #rounding the scores
+            #scores.data.round_()
+            count = scores.sum() 
             counts.append(count)            
             
         ret = torch.stack(counts,0)
         if self.debug:
-            return ret,wsi
+            return ret,scores
         
         return ret
 

@@ -4,6 +4,8 @@ import torch
 from models.language import getglove
 import pickle
 import h5py
+from models.dictionary import Dictionary
+from models.lang_new import tokenize_ques
 
 class CountDataset(Dataset):
 
@@ -14,6 +16,10 @@ class CountDataset(Dataset):
         
         with open(file,'rb') as f:
             self.data = pickle.load(f)
+            
+            
+        self.dictionary = Dictionary.load_from_file(kwargs.get('dictionaryfile'))
+        
             
 #        self.data = self.data[:32]
 #        self.dictionary = dictionary
@@ -139,11 +145,12 @@ class CountDataset(Dataset):
         else:
             L, W, H ,imgarr,box_coords = self._load_image_coco(img_id)
         
-#        tokens = tokenize_ques(self.dictionary,"How many dogs?")
-#        qfeat = torch.from_numpy(tokens)
+
+        tokens = tokenize_ques(self.dictionary,que)
+        qfeat = torch.from_numpy(tokens).long()
         
-        qfeat = getglove(que)
-        qfeat = torch.from_numpy(qfeat)
+        #qfeat = getglove(que)
+        #qfeat = torch.from_numpy(qfeat)
 
         imgarr = torch.from_numpy(imgarr)
         box_coords = torch.from_numpy(np.array(box_coords,dtype=np.float32))        

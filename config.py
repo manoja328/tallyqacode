@@ -9,6 +9,13 @@ global_config['genome_pool_features'] = '/media/manoj/hdd/IMGFEATS/resnet152_gen
 global_config['coco_bottomup'] = '/home/manoj/bottomup_1_100/ssd/genome-trainval.h5'
 global_config['genome_bottomup'] = '/home/manoj/bottomup_1_100/ssd/genome_ourdb/genome-trainval.h5'
 
+
+#dictionary
+
+global_config['dictionaryfile'] = 'data/dictionary.pkl'
+global_config['glove'] = 'data/glove6b_init_300d.npy'
+
+
 #dataset configs
 name= 'Ourdb'
 dataset[name] = {}
