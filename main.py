@@ -24,6 +24,7 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=1111, help='random seed')
     parser.add_argument('--resume', type=str, default=None, help='resume file name')
     parser.add_argument('--test', type=bool, default=False, help='test only')
+    parser.add_argument('--nobaselines', action='store_true',help='does not eval baselines')
     parser.add_argument('--clip_norm', type=float, default=200.0, help='norm clipping')
     parser.add_argument('--expl', type=str, default='info', help='extra explanation of the method')
     args = parser.parse_args()
@@ -83,6 +84,7 @@ if __name__ == '__main__':
                      'clip_norm': args.clip_norm,
                      'jsonfolder': config.global_config['jsonfolder'],
                      'N_classes': N_classes,
+                     'nobaselines': args.nobaselines,
                      'dsname': args.dsname,
                      'savefolder': savefolder, 
                      'isVQAeval': isVQAeval,

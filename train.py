@@ -136,9 +136,9 @@ def run(**kwargs):
     N_classes = kwargs.get('N_classes')
     test_loader = kwargs.get('test_loader')
     start_epoch = kwargs.get('start_epoch')
-    
+    eval_baselines = kwargs.get('nobaselines') == False
     #DETECT, MUTAN , Zhang , UPdown baselines
-    if start_epoch == 0: # if not resuming
+    if start_epoch == 0 and eval_baselines: # if not resuming
         eval_extra.main(**kwargs) 
         
     testset = test_loader.dataset.data
