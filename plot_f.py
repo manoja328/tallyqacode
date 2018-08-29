@@ -2,8 +2,9 @@ import argparse
 import torch
 import os
 import config
-from models.RN_GTU import RN
+from models import RN_NAC,RN_GTU,RN_BGOG
 from utils import load_checkpoint
+import sys
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
@@ -70,7 +71,8 @@ def saveimage(ent,vals):
         imglast = image.split("/")[-1]
         plt.title("Prediction: {:.2f} Ground truth: {}".format(C,ent['answer']))
         plt.xlabel("{}".format(ent['question']))
-        plt.savefig("ann_{}".format(imglast),dpi=150)
+        plt.savefig("rounding_test/ann_{}".format(imglast),dpi=150)
+        plt.close()
 
     else:
         print ("Image-id {} not found".format(image_id))
@@ -79,9 +81,8 @@ def saveimage(ent,vals):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dsname', help='dataset: Ourdb | HowmanyQA' , default='Ourdb')
-    parser.add_argument('--model', help='Model Q | I| QI | Main | RN',default='RN')
-    parser.add_argument('--save', help='save folder name',default='padfront')
-    parser.add_argument('--resume', type=str, default='Ourdb_RN_padfront/chkpoint_16.pth', help='resume file name')
+    parser.add_argument('--model', help='Model Q | I| QI | Main | RN',default='RN_GTU')
+    parser.add_argument('--resume', type=str, default='Ourdb_RN_GTU_padfront/chkpoint_16.pth', help='resume file name')
     args = parser.parse_args()
     return args
 
@@ -95,14 +96,14 @@ if __name__ == '__main__':
 
     ds = config.dataset[args.dsname]
     N_classes = ds['N_classes']
-    savefolder = '_'.join([args.dsname,args.model,args.save])
-
-
+    
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")    
     loader_kwargs = {'num_workers': 4} if use_cuda else {}
-
-    model = RN(N_classes,debug = True)
+    
+    models = { 'RN_BGOG': RN_BGOG.RN ,
+              'RN_GTU': RN_GTU.RN,'RN_NAC': RN_NAC.RN } 
+    model = models[args.model](N_classes,debug=True)
     model = model.to(device)
     print (model)
 
@@ -112,34 +113,41 @@ if __name__ == '__main__':
          start_epoch,meta = load_checkpoint(args.resume,model,optimizer)
          
   
-
     testds = CountDataset(file = ds['test'],**config.global_config)
     testset = testds.data
 
-    ent = np.random.choice(testset)
-    print (ent)
-    image_id = getimageid(ent)    
-    L, W, H ,box_feats,_ = load_image_coco(image_id)  
-
-    q_feats = getglove(ent['question'])
-    q_feats = torch.from_numpy(q_feats)
-    box_feats = torch.from_numpy(box_feats)
-
-    box_feats = box_feats.to(device).unsqueeze(0)
-    q_feats = q_feats.to(device).unsqueeze(0)
-
-    net_kwargs = { 'wholefeat': None,
-               'pooled' : None,
-               'box_feats':box_feats,
-               'q_feats':q_feats,
-               'box_coords':None,
-               'index':[L] }
-
-    out,scores = model(**net_kwargs)
-    print ("Count val: ",out.item())
-    fvals = scores.squeeze(1).tolist()
-    print (fvals)
-    saveimage(ent,fvals)
-         
+    while True:
+        ent = np.random.choice(testset)
+        print (ent)
+        image_id = getimageid(ent)    
+        L, W, H ,box_feats,_ = load_image_coco(image_id)  
+    
+        q_feats = getglove(ent['question'])
+        q_feats = torch.from_numpy(q_feats)
+        box_feats = torch.from_numpy(box_feats)
+    
+        box_feats = box_feats.to(device).unsqueeze(0)
+        q_feats = q_feats.to(device).unsqueeze(0)
+    
+        net_kwargs = { 'wholefeat': None,
+                   'pooled' : None,
+                   'box_feats':box_feats,
+                   'q_feats':q_feats,
+                   'box_coords':None,
+                   'index':[L] }
+    
+        out,scores = model(**net_kwargs)
+        print ("Ground Truth: ",ent['answer'])
+        print ("Predicted: ",out.item())
+        fvals = scores.squeeze(1).tolist()
+        for func in [np.ceil, np.fix, np.floor, np.rint, np.trunc , np.round]:
+            print (" [{}] , Count: {}".format(func.__name__,np.sum(func(fvals))))
+        print (fvals)
+        saveimage(ent,fvals)
+        feedback = input("Continue [N/n]?: ")
+        if feedback in ['N','n']:
+            print ("Done....")
+            sys.exit(0)
+             
 
 
