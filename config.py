@@ -1,4 +1,6 @@
 from collections import defaultdict
+from models.baseline import Qmodel,Imodel,QImodel
+from models import RN_NAC,RN_GTU,RN_BGOG,RN_GTU_norm
 dataset = defaultdict(list)
 
 #global config
@@ -21,3 +23,12 @@ dataset[name] = {}
 dataset[name]['N_classes'] = 21
 dataset[name]['test'] = '/home/manoj/Downloads/HowMany-QA/howmanyQA_test.pkl'
 dataset[name]['train'] = '/home/manoj/Downloads/HowMany-QA/howmanyQA_train.pkl'
+
+
+#model names
+models = { 'Q':Qmodel, 'I': Imodel, 'QI': QImodel ,
+          'RN_BGOG': RN_BGOG.RN,
+          'RN_NAC': RN_NAC.RN,
+          'RN_GTU': RN_GTU.RN,
+          'RN_GTU_norm': RN_GTU_norm.RN,
+          } 

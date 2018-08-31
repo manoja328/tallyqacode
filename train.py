@@ -46,18 +46,20 @@ def main(**kwargs):
             idxs.extend(qid.tolist())        
             labels = labels.long()            
             index  = index.long()
-            B = wholefeat.size(0)
+            B = qid.size(0)
             #converts 14_14 to 7_7
             #change pool size
-            pooled = F.avg_pool2d(pooled.permute(0,3,1,2),8,2)
-            Npool = pooled.size(-1)
-            pooled = pooled.view(B,2048,Npool**2)
-            pooled = pooled.permute(0,2,1)
-            pooled = F.normalize(pooled,p=2,dim=-1)
-            #print (pooled.shape)
+            
+            if torch.sum(pooled):
+                pooled = F.avg_pool2d(pooled.permute(0,3,1,2),8,2)
+                Npool = pooled.size(-1)
+                pooled = pooled.view(B,2048,Npool**2)
+                pooled = pooled.permute(0,2,1)
+                pooled = F.normalize(pooled,p=2,dim=-1)
+                #print (pooled.shape)
     
-            pooled = pooled.to(device)
-            wholefeat = F.normalize(wholefeat,p=2,dim=-1)
+                pooled = pooled.to(device)
+                wholefeat = F.normalize(wholefeat,p=2,dim=-1)
     
             #box_coords_add1 = torch.cat([torch.ones(B,N,1),box_coords],dim=-1)
             #box_coords_add1 = F.normalize(box_coords_add1,dim=-1)
@@ -75,8 +77,8 @@ def main(**kwargs):
     
             optimizer.zero_grad()
             
-            net_kwargs = { 'wholefeat':wholefeat,
-                           'pooled' :pooled,
+            net_kwargs = { 'wholefeat':None,
+                           'pooled' :None,
                            'box_feats':box_feats,
                            'q_feats':q_feats,
                            'box_coords':box_coords,
