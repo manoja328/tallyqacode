@@ -60,10 +60,9 @@ def main(**kwargs):
     
                 pooled = pooled.to(device)
                 wholefeat = F.normalize(wholefeat,p=2,dim=-1)
-    
-            #box_coords_add1 = torch.cat([torch.ones(B,N,1),box_coords],dim=-1)
-            #box_coords_add1 = F.normalize(box_coords_add1,dim=-1)
-    
+            else:
+                pooled = wholefeat = None
+   
             true.extend(labels.tolist())
     
             #normalize the box feats
@@ -72,13 +71,11 @@ def main(**kwargs):
             box_coords = box_coords.to(device)
             labels = labels.to(device)
             q_feats = ques.to(device)
-    #       coord_feats = Variable(coords.type(dtype))
-    
-    
+     
             optimizer.zero_grad()
             
-            net_kwargs = { 'wholefeat':None,
-                           'pooled' :None,
+            net_kwargs = { 'wholefeat':wholefeat,
+                           'pooled' :pooled,
                            'box_feats':box_feats,
                            'q_feats':q_feats,
                            'box_coords':box_coords,
