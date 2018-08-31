@@ -6,8 +6,8 @@ dataset = defaultdict(list)
 #global config
 global_config = {}
 global_config['jsonfolder'] ='/home/manoj/mutan'
-global_config['coco_pool_features'] = '/media/manoj/hdd/IMGFEATS/resnet152.h5'
-global_config['genome_pool_features'] = '/media/manoj/hdd/IMGFEATS/resnet152_genome.h5'
+global_config['coco_pool_features'] = '/hdd/manoj/IMGFEATS/resnet152.h5'
+global_config['genome_pool_features'] = '/hdd/manoj/IMGFEATS/resnet152_genome.h5'
 global_config['coco_bottomup'] = '/home/manoj/bottomup_1_100/ssd/genome-trainval.h5'
 global_config['genome_bottomup'] = '/home/manoj/bottomup_1_100/ssd/genome_ourdb/genome-trainval.h5'
 

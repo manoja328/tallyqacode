@@ -140,8 +140,8 @@ def run(**kwargs):
     start_epoch = kwargs.get('start_epoch')
     
     #DETECT, MUTAN , Zhang , UPdown baselines
-    if start_epoch == 0: # if not resuming
-        eval_extra.main(**kwargs) 
+    #if start_epoch == 0: # if not resuming
+        #eval_extra.main(**kwargs) 
         
     testset = test_loader.dataset.data
     early_stop = EarlyStopping(monitor='loss',patience=3)
