@@ -4,8 +4,9 @@ import torch
 from models.language import getglove
 import pickle
 import h5py
-from models.dictionary import Dictionary
+#from models.dictionary import Dictionary
 from models.lang_new import tokenize_ques
+from nms_expt import non_max_suppression_fast
 
 class CountDataset(Dataset):
 
@@ -18,7 +19,7 @@ class CountDataset(Dataset):
             self.data = pickle.load(f)
             
             
-        self.dictionary = Dictionary.load_from_file(kwargs.get('dictionaryfile'))
+       # self.dictionary = Dictionary.load_from_file(kwargs.get('dictionaryfile'))
         
             
 #        self.data = self.data[:32]
@@ -60,7 +61,13 @@ class CountDataset(Dataset):
         # find the boxes with all co-ordinates 0,0,0,0
         #L = np.where(~box_locations.any(axis=1))[0][0]
         
-        return L,W,H,box_feats.T,box_locations.T
+        keep  =  non_max_suppression_fast(box_locations.T,0.7)
+        L = len(keep)
+        box_f = box_feats.T[keep]
+        box_f = np.concatenate([box_f,np.zeros((100-L,2048))])
+        box_l = box_locations.T[keep]
+        box_l = np.concatenate([box_l,np.zeros((100-L,4))])
+        return L,W,H,box_f,box_l     
  
 
     def _load_image_genome(self, image_id):
@@ -81,7 +88,13 @@ class CountDataset(Dataset):
         # find the boxes with all co-ordinates 0,0,0,0
         #L = np.where(~box_locations.any(axis=1))[0][0]
         
-        return L,W,H,box_feats.T,box_locations.T        
+        keep  =  non_max_suppression_fast(box_locations.T,0.7)
+        L = len(keep)
+        box_f = box_feats.T[keep]
+        box_f = np.concatenate([box_f,np.zeros((100-L,2048))])
+        box_l = box_locations.T[keep]
+        box_l = np.concatenate([box_l,np.zeros((100-L,4))])
+        return L,W,H,box_f,box_l       
         
     def _poolcreate_coco_id_to_index(self , path):
         """ Create a mapping from a COCO image id into the corresponding index into the h5 file """
@@ -133,7 +146,7 @@ class CountDataset(Dataset):
        
         lasttwo = '/'.join(img_name.split("/")[-2:])
         lasttwo +=".pkl"
-        wholefeat,pooled = self._load_pool_image(lasttwo[:-4])
+        #wholefeat,pooled = self._load_pool_image(lasttwo[:-4])
 
         lastone = lasttwo.split("/")[-1]
         
@@ -146,15 +159,15 @@ class CountDataset(Dataset):
             L, W, H ,imgarr,box_coords = self._load_image_coco(img_id)
         
 
-        tokens = tokenize_ques(self.dictionary,que)
-        qfeat = torch.from_numpy(tokens).long()
+#        tokens = tokenize_ques(self.dictionary,que)
+#        qfeat = torch.from_numpy(tokens).long()
         
-        #qfeat = getglove(que)
-        #qfeat = torch.from_numpy(qfeat)
+        qfeat = getglove(que)
+        qfeat = torch.from_numpy(qfeat)
 
         imgarr = torch.from_numpy(imgarr)
         box_coords = torch.from_numpy(np.array(box_coords,dtype=np.float32))        
         scale = torch.from_numpy(np.array([W,H,W,H],dtype=np.float32))
         box_coords = box_coords / scale   
-        return qid,wholefeat,pooled,imgarr.float(),np.float32(ans),qfeat,box_coords.float(),L
+        return qid,0,0,imgarr.float(),np.float32(ans),qfeat,box_coords.float(),L
 

@@ -78,6 +78,29 @@ def saveimage(ent,vals):
         print ("Image-id {} not found".format(image_id))
 
 
+def saveimage_clean(ent,boxes):
+    image = os.path.join('/home/manoj',ent['image'])
+    imglast = image.split("/")[-1]
+    image_id = getimageid(ent)
+    if image_id in coco_id_to_index:
+        npimg = Image.open(image)      
+        plt.figure()
+        plt.imshow(npimg)
+        L = len(boxes)
+        for i in range(L):
+           xmin , ymin,xmax,ymax  = boxes[i]
+           x =[xmin,ymin,xmax,ymax]
+           rect = retbox(x)
+           plt.plot(rect[:,0],rect[:,1],'r',linewidth=1.0)
+        plt.savefig("rounding_test/annnms__{}".format(imglast),dpi=150)
+        plt.close()
+    else:
+        print ("Image-id {} not found".format(image_id))    
+
+
+
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dsname', help='dataset: Ourdb | HowmanyQA' , default='Ourdb')
@@ -120,7 +143,7 @@ if __name__ == '__main__':
         ent = np.random.choice(testset)
         print (ent)
         image_id = getimageid(ent)    
-        L, W, H ,box_feats,_ = load_image_coco(image_id)  
+        L, W, H ,box_feats,box_locations = load_image_coco(image_id) 
     
         q_feats = getglove(ent['question'])
         q_feats = torch.from_numpy(q_feats)
@@ -144,6 +167,13 @@ if __name__ == '__main__':
             print (" [{}] , Count: {}".format(func.__name__,np.sum(func(fvals))))
         print (fvals)
         saveimage(ent,fvals)
+        
+              
+        from nms_expt import non_max_suppression_fast
+        ind_boxes = non_max_suppression_fast(box_locations, 0.7)
+        boxes = box_locations[ind_boxes]
+        saveimage_clean(ent,boxes)
+        
         feedback = input("Continue [N/n]?: ")
         if feedback in ['N','n']:
             print ("Done....")

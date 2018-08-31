@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 
 class RN(nn.Module):
-    def __init__(self,Ncls):
+    def __init__(self,Ncls,**kwargs):
         super().__init__()
 
         I_CNN = 2048

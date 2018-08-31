@@ -10,6 +10,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from .lang_new import QuestionParser
+
+
 
 class RN(nn.Module):
     def __init__(self,Ncls,**kwargs):
@@ -24,8 +27,11 @@ class RN(nn.Module):
         self.Ncls = Ncls
         #self.Ncls = 1
         
-        self.QRNN = nn.LSTM(Q_embedding,Q_GRU_out,num_layers=1,bidirectional=False)
-
+        self.QRNN = QuestionParser(dictionaryfile = kwargs['dictionaryfile'],
+                                   glove_file = kwargs['glove'],
+                                     dropout=0.3, word_dim=Q_embedding,
+                                     ques_dim=Q_GRU_out ,
+                                     rnn_type= 'GRU')
 
         layers_g1 = [ nn.Linear( 2*I_CNN + 2*Boxcoords + Q_GRU_out, LINsize),
                nn.ReLU(inplace=True),
@@ -83,11 +89,8 @@ class RN(nn.Module):
 
     def forward(self,wholefeat,pooled,box_feats,q_feats,box_coords,index):
 
-
-        enc2,_ = self.QRNN(q_feats.permute(1,0,2))
-        q_rnn = enc2[-1]
-
-
+        q_rnn  = self.QRNN(q_feats)
+        
         counts = []
         total = q_feats.size(0)
         for i in range(total):
