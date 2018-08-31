@@ -27,11 +27,14 @@ class RN(nn.Module):
         self.Ncls = Ncls
         #self.Ncls = 1
         
-        self.QRNN = QuestionParser(dictionaryfile = kwargs['dictionaryfile'],
-                                   glove_file = kwargs['glove'],
-                                     dropout=0.3, word_dim=Q_embedding,
-                                     ques_dim=Q_GRU_out ,
-                                     rnn_type= 'GRU')
+        
+        if kwargs.get('trainembd'):       
+            self.QRNN = QuestionParser(dictionaryfile = kwargs['dictionaryfile'],
+                                       glove_file = kwargs['glove'],
+                                         dropout=0.3, word_dim=Q_embedding,
+                                         ques_dim=Q_GRU_out ,
+                                         rnn_type= 'GRU')
+               
 
         layers_g1 = [ nn.Linear( 2*I_CNN + 2*Boxcoords + Q_GRU_out, LINsize),
                nn.ReLU(inplace=True),

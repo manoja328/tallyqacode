@@ -153,9 +153,10 @@ class CountDataset(Dataset):
        
         lasttwo = '/'.join(img_name.split("/")[-2:])
         lasttwo +=".pkl"
+        lastone = lasttwo.split("/")[-1]
         #wholefeat,pooled = self._load_pool_image(lasttwo[:-4])
 
-        lastone = lasttwo.split("/")[-1]
+        wholefeat = pooled = 0
         
 #        pk = pickle.load(open(os.path.join("/home/manoj/448feats/feats",lastone),"rb"))
 #        L =  len(pk) - 1 # lenght of entries in pickle file
@@ -177,5 +178,5 @@ class CountDataset(Dataset):
         box_coords = torch.from_numpy(np.array(box_coords,dtype=np.float32))        
         scale = torch.from_numpy(np.array([W,H,W,H],dtype=np.float32))
         box_coords = box_coords / scale   
-        return qid,0,0,imgarr.float(),np.float32(ans),qfeat,box_coords.float(),L
+        return qid,wholefeat,pooled,imgarr.float(),np.float32(ans),qfeat,box_coords.float(),L
 

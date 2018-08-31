@@ -9,6 +9,7 @@ from train import run
 import inspect
 from utils import load_checkpoint
 from utils import get_current_time
+import sys
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -41,19 +42,23 @@ if __name__ == '__main__':
 
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
-
+    
     ds = config.dataset[args.dsname]
     N_classes = ds['N_classes']
-    savefolder = '_'.join([args.dsname,args.model,args.save])
-    logger = Logger(os.path.join(savefolder, 'log.txt'))
-    logger.write("==== {} ====".format(get_current_time()))
-
 
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")    
     loader_kwargs = {'num_workers': 4} if use_cuda else {}
-    model = config.models[args.model](N_classes,**config.global_config)
+    model = config.models.get(args.model,None)
+    if model is None:
+        print ("Model name not found valid names are: {} ".format(config.models))
+        sys.exit(0)
+    model = model(N_classes,trainembd=args.trainembd,**config.global_config)
     model = model.to(device)
+    
+    savefolder = '_'.join([args.dsname,args.model,args.save])
+    logger = Logger(os.path.join(savefolder, 'log.txt'))
+    logger.write("==== {} ====".format(get_current_time()))   
     print (model)
 
     optimizer = torch.optim.Adam(model.parameters(),lr=args.lr)
@@ -70,11 +75,9 @@ if __name__ == '__main__':
 
 
     dskwargs = { 'trainembd':args.trainembd , 'isnms':args.isnms ,
-                'testrun':args.testrun}
-    testds = CountDataset(file = ds['test'], **dskwargs,
-                          **config.global_config)
-    trainds = CountDataset(file = ds['train'],istrain=True,
-                           **dskwargs,**config.global_config)
+                'testrun':args.testrun , **config.global_config}
+    testds = CountDataset(file = ds['test'], **dskwargs)
+    trainds = CountDataset(file = ds['train'],istrain=True,**dskwargs)
     
 
     test_loader = DataLoader(testds, batch_size=args.bs,

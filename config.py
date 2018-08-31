@@ -1,6 +1,6 @@
 from collections import defaultdict
 from models.baseline import Qmodel,Imodel,QImodel
-from models import RN_NAC,RN_GTU,RN_BGOG,RN_GTU_norm
+from models import RN_NAC,RN_GTU,RN_BGOG,RN_GTU_norm,RN_OG_embd
 dataset = defaultdict(list)
 
 #global config
@@ -14,7 +14,7 @@ global_config['genome_bottomup'] = '/home/manoj/bottomup_1_100/ssd/genome_ourdb/
 
 #dictionary
 
-global_config['dictionaryfile'] = 'data/dictionary.pkl'
+global_config['dictionaryfile'] = 'data/dictionary.pickle'
 global_config['glove'] = 'data/glove6b_init_300d.npy'
 
 
@@ -37,5 +37,6 @@ models = { 'Q':Qmodel, 'I': Imodel, 'QI': QImodel ,
           'RN_BGOG': RN_BGOG.RN,
           'RN_NAC': RN_NAC.RN,
           'RN_GTU': RN_GTU.RN,
+          'RN_OG_embd': RN_OG_embd.RN,
           'RN_GTU_norm': RN_GTU_norm.RN,
           } 
