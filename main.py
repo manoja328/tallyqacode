@@ -3,9 +3,8 @@ import torch
 import os
 from utils import Logger
 import config
-#from data import CountDataset
+from data import CountDataset
 from torch.utils.data import  DataLoader
-from data_nms import CountDataset
 from train import run
 import inspect
 from utils import load_checkpoint
@@ -23,6 +22,9 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=1111, help='random seed')
     parser.add_argument('--resume', type=str, default=None, help='resume file name')
     parser.add_argument('--test', type=bool, default=False, help='test only')
+    parser.add_argument('--testrun', type=bool, default=False, help='test run with few dataset')
+    parser.add_argument('--isnms', type=bool, default=False, help='Do nms?')
+    parser.add_argument('--trainembd',type=bool,default=True,help='use fixed / trainable embedding')
     parser.add_argument('--nobaselines', action='store_true',help='does not eval baselines')
     parser.add_argument('--clip_norm', type=float, default=200.0, help='norm clipping')
     parser.add_argument('--expl', type=str, default='info', help='extra explanation of the method')
@@ -50,7 +52,7 @@ if __name__ == '__main__':
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")    
     loader_kwargs = {'num_workers': 4} if use_cuda else {}
-    model = models[args.model](N_classes,**config.global_config)
+    model = config.models[args.model](N_classes,**config.global_config)
     model = model.to(device)
     print (model)
 
@@ -67,8 +69,12 @@ if __name__ == '__main__':
         logger.write_silent(repr(model))
 
 
-    testds = CountDataset(file = ds['test'],**config.global_config)
-    trainds = CountDataset(file = ds['train'],istrain=True,**config.global_config)
+    dskwargs = { 'trainembd':args.trainembd , 'isnms':args.isnms ,
+                'testrun':args.testrun}
+    testds = CountDataset(file = ds['test'], **dskwargs,
+                          **config.global_config)
+    trainds = CountDataset(file = ds['train'],istrain=True,
+                           **dskwargs,**config.global_config)
     
 
     test_loader = DataLoader(testds, batch_size=args.bs,
