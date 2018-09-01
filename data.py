@@ -18,6 +18,9 @@ class CountDataset(Dataset):
         self.isnms = kwargs.get('isnms')
         self.trainembd = kwargs.get('trainembd')
         
+        #6 postion encoded vectors as used by irls
+        self.spatial = True
+        
         with open(file,'rb') as f:
             self.data = pickle.load(f)
                                  
@@ -36,6 +39,31 @@ class CountDataset(Dataset):
         self.coco_id_to_index =  self.id_to_index(self.image_features_path_coco)  
         self.image_features_path_genome = kwargs.get('genome_bottomup')
         self.genome_id_to_index =  self.id_to_index(self.image_features_path_genome)        
+
+    def _process_boxes(self,bboxes,image_w,image_h):
+            box_width = bboxes[:, 2] - bboxes[:, 0]
+            box_height = bboxes[:, 3] - bboxes[:, 1]
+            scaled_width = box_width / image_w
+            scaled_height = box_height / image_h
+            scaled_x = bboxes[:, 0] / image_w
+            scaled_y = bboxes[:, 1] / image_h
+            box_width = box_width[..., np.newaxis]
+            box_height = box_height[..., np.newaxis]
+            scaled_width = scaled_width[..., np.newaxis]
+            scaled_height = scaled_height[..., np.newaxis]
+            scaled_x = scaled_x[..., np.newaxis]
+            scaled_y = scaled_y[..., np.newaxis]      
+            spatial_features = np.concatenate(
+                (scaled_x,
+                 scaled_y,
+                 scaled_x + scaled_width,
+                 scaled_y + scaled_height,
+                 scaled_width,
+                 scaled_height),
+                axis=1)  
+                
+            return spatial_features  
+
 
     def id_to_index(self,path):
         """ Create a mapping from a COCO image id into the corresponding index into the h5 file """
@@ -71,6 +99,10 @@ class CountDataset(Dataset):
             box_l = box_locations.T[keep]
             box_l = np.concatenate([box_l,np.zeros((100-L,4))])
             return L,W,H,box_f,box_l  
+        
+        if self.spatial:
+            spatials = self._process_boxes(box_locations.T,W,H)
+            return L,W,H,box_feats.T,spatials
         return L,W,H,box_feats.T, box_locations.T 
  
 
@@ -100,7 +132,10 @@ class CountDataset(Dataset):
             box_l = box_locations.T[keep]
             box_l = np.concatenate([box_l,np.zeros((100-L,4))])
             return L,W,H,box_f,box_l  
-        return L,W,H,box_feats.T, box_locations.T
+        if self.spatial:
+            spatials = self._process_boxes(box_locations.T,W,H)
+            return L,W,H,box_feats.T,spatials
+        return L,W,H,box_feats.T, box_locations.T 
         
         
     def _poolcreate_coco_id_to_index(self , path):
@@ -175,8 +210,9 @@ class CountDataset(Dataset):
             qfeat = torch.from_numpy(qfeat)
 
         imgarr = torch.from_numpy(imgarr)
-        box_coords = torch.from_numpy(np.array(box_coords,dtype=np.float32))        
-        scale = torch.from_numpy(np.array([W,H,W,H],dtype=np.float32))
-        box_coords = box_coords / scale   
+        box_coords = torch.from_numpy(box_coords)
+        if not self.spatial:
+            scale = torch.tensor([W,H,W,H])
+            box_coords = box_coords / scale   
         return qid,wholefeat,pooled,imgarr.float(),np.float32(ans),qfeat,box_coords.float(),L
 

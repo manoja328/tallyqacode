@@ -13,12 +13,12 @@ import sys
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dsname', help='dataset: Ourdb | HowmanyQA' , default='Ourdb')
+    parser.add_argument('--dsname', help='dataset: Ourdb | HowmanyQA' , default='HowmanyQA')
     parser.add_argument('--epochs', type=int,help='Number of epochs',default=50)
-    parser.add_argument('--model', help='Model Q | I| QI | Main | RN',default='RN_GTU')
+    parser.add_argument('--model', help='Model Q | I| QI | Main | RN',default='RN_OG_embd')
     parser.add_argument('--lr', type=float,default=0.0003,help='Learning rate')
     parser.add_argument('--bs', type=int,default=32,help='Batch size')
-    parser.add_argument('--save', help='save folder name',default='0')
+    parser.add_argument('--save', help='save folder name',default='extrairlc')
     parser.add_argument('--savefreq', help='save model frequency',type=int,default=1)
     parser.add_argument('--seed', type=int, default=1111, help='random seed')
     parser.add_argument('--resume', type=str, default=None, help='resume file name')
