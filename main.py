@@ -27,6 +27,7 @@ def parse_args():
     parser.add_argument('--isnms', type=bool, default=False, help='Do nms?')
     parser.add_argument('--trainembd',type=bool,default=True,help='use fixed / trainable embedding')
     parser.add_argument('--nobaselines', action='store_true',help='does not eval baselines')
+    parser.add_argument('--savejson', action='store_true',help='save json in VQA format')
     parser.add_argument('--clip_norm', type=float, default=200.0, help='norm clipping')
     parser.add_argument('--expl', type=str, default='info', help='extra explanation of the method')
     args = parser.parse_args()
@@ -76,7 +77,7 @@ if __name__ == '__main__':
 
     dskwargs = { 'trainembd':args.trainembd , 'isnms':args.isnms ,
                 'testrun':args.testrun , **config.global_config}
-    testds = CountDataset(file = ds['test'], **dskwargs)
+    testds = CountDataset(file = ds['test'],istrain=False,**dskwargs)
     trainds = CountDataset(file = ds['train'],istrain=True,**dskwargs)
     
 
@@ -86,6 +87,7 @@ if __name__ == '__main__':
                          shuffle=True, **loader_kwargs)
     
     run_kwargs = {   'start_epoch': start_epoch,
+                     'savejson': args.savejson,
                      'clip_norm': args.clip_norm,
                      'jsonfolder': config.global_config['jsonfolder'],
                      'N_classes': N_classes,

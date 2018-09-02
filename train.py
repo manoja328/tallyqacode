@@ -6,6 +6,8 @@ from models.callbacks import EarlyStopping
 import torch.nn.functional as F
 from utils import save_checkpoint
 import utils
+import os
+import json
 import numpy as np
 import eval_extra
 from CLR import CyclicLR
@@ -178,7 +180,17 @@ def run(**kwargs):
                 acc,rmse = simp_comp[d]
                 logger.write("\t{} RMSE:{:.2f} Accuracy {:.2f}%".format(d,rmse,acc))
             
-
+        if kwargs.get('savejson'):
+            js = []
+            for qid in predictions:
+                ent = {}
+                ent["question_id"] = int(qid)
+                ent["answer"] = str(predictions[qid])
+                js.append(ent)
+            path = os.path.join(savefolder, 'test{}.json'.format(epoch))
+            json.dump(js,open(path,'w'))
+                
+                
         is_best = False
         if epoch % Modelsavefreq == 0:
             print ('Saving model ....')
