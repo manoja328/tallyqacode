@@ -87,12 +87,8 @@ if __name__ == '__main__':
                          shuffle=True, **loader_kwargs)
     
     run_kwargs = {   'start_epoch': start_epoch,
-                     'savejson': args.savejson,
-                     'clip_norm': args.clip_norm,
                      'jsonfolder': config.global_config['jsonfolder'],
                      'N_classes': N_classes,
-                     'nobaselines': args.nobaselines,
-                     'dsname': args.dsname,
                      'savefolder': savefolder, 
                      'isVQAeval': isVQAeval,
                      'device' : device, 
@@ -100,8 +96,8 @@ if __name__ == '__main__':
                      'train_loader': train_loader,
                      'test_loader': test_loader,
                      'optimizer' : optimizer,
-                     'epochs': args.epochs,
-                     'logger':logger
+                     'logger':logger,
+                     **args.__dict__,
                   }
 
     run(**run_kwargs)

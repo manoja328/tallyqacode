@@ -164,12 +164,15 @@ def run(**kwargs):
         logger.append('train_losses',train['loss'])
         logger.write('\tTest Loss: {:.4f}'.format(test['loss']))
         logger.append('test_losses',test['loss'])
-        
-        #clamp all output
-        pred_reg = np.array(test['pred_reg'],dtype=np.uint64)
-        pred_reg_clip = pred_reg.clip(min=0,max=N_classes-1).tolist()
-        predictions = dict(zip(test['qids'] , pred_reg_clip))
-           
+                
+        if kwargs.get('dsname') == 'VQA2':
+            predictions = dict(zip(test['qids'] , test['pred_reg']))
+        else:
+            pred_reg = np.array(test['pred_reg'],dtype=np.uint64)
+            #clamp all output
+            pred_reg_clip = pred_reg.clip(min=0,max=N_classes-1).tolist()
+            predictions = dict(zip(test['qids'] , pred_reg_clip))
+                     
         if isVQAeval:
             acc,rmse = eval_extra.evalvqa(testset,predictions,isVQAeval)
             logger.write("\tRMSE:{:.2f} Accuracy {:.2f}%".format(rmse,acc))
