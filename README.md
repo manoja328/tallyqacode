@@ -1,5 +1,5 @@
-# tallyqacode
-Code for tallyqa published in AAAI 2018
+
+Code for TallyQA  dataset published in AAAI 2018
 
 
 The main paper uses the `RN_BG_OG_embd` model with the reported hyper-parameters in this repo.
