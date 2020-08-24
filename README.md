@@ -18,5 +18,5 @@ There are other types of Relational Models avaialabe in the repo which we tried 
 To Run the code as:
 ```python main.py --model RN_OG_embd ```
 
-Don't forget to edit config.py to point to appropriate  locations for files and features.
+Don't forget to edit `config.py` to point to appropriate  locations for files and features.
 Please, feel free to ask if you have any other questions.
