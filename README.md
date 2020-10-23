@@ -1,5 +1,5 @@
 
-# Code for TallyQA  dataset published in AAAI 2018
+# Official Code for TallyQA  dataset published in AAAI 2018
 
 For doing simple vs complex classification we used simpcomp.py file. You can load your dataset accordinlgy. TallyQA already
 has a field  ```issimple``` that says whether the question is simple or complex so you don't need to run that file. For example, 
